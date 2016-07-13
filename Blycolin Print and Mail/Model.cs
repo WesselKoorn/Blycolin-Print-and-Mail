@@ -16,53 +16,121 @@ namespace Blycolin_Print_and_Mail
         // Insert text to a cell, given a document name, sheet name, column name and row number.
         public static void InsertText(string docName, string sheetName, string colName, uint rowIndex, string text)
         {
-            try
+            // Open the document for editing.
+            using (SpreadsheetDocument spreadSheet = SpreadsheetDocument.Open(docName, true))
             {
-                // Open the document for editing.
-                using (SpreadsheetDocument spreadSheet = SpreadsheetDocument.Open(docName, true))
+                // Get the SharedStringTablePart. If it does not exist, create a new one.
+                SharedStringTablePart shareStringPart;
+                if (spreadSheet.WorkbookPart.GetPartsOfType<SharedStringTablePart>().Count() > 0)
                 {
-                    // Get the SharedStringTablePart. If it does not exist, create a new one.
-                    SharedStringTablePart shareStringPart;
-                    if (spreadSheet.WorkbookPart.GetPartsOfType<SharedStringTablePart>().Count() > 0)
+                    shareStringPart = spreadSheet.WorkbookPart.GetPartsOfType<SharedStringTablePart>().First();
+                }
+                else
+                {
+                    shareStringPart = spreadSheet.WorkbookPart.AddNewPart<SharedStringTablePart>();
+                }
+
+                // Insert the text into the SharedStringTablePart.
+                int index = InsertSharedStringItem(text, shareStringPart);
+
+                // Get worksheet
+                IEnumerable<Sheet> sheets = spreadSheet.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>().Where(s => s.Name == sheetName);
+                if (sheets.Count() == 0)
+                {
+                    // The specified worksheet does not exist.
+                    MessageBox.Show("Kan het Excel blad niet vinden.");
+                    return;
+                }
+                string relationshipId = sheets.First().Id.Value;
+                WorksheetPart worksheetPart = (WorksheetPart)spreadSheet.WorkbookPart.GetPartById(relationshipId);
+
+                // Insert the cell into the worksheet.
+                Cell cell = InsertCellInWorksheet(colName, rowIndex, worksheetPart);
+
+                // Set the value of the cell.
+                cell.CellValue = new CellValue(index.ToString());
+                cell.DataType = new EnumValue<CellValues>(CellValues.SharedString);
+
+                // Save the new worksheet.
+                worksheetPart.Worksheet.Save();
+
+                MessageBox.Show("Bestand is opgeslagen.");
+            }
+        }
+
+        // Retrieve the value of a cell, given a file name, sheet name, 
+        // and address name.
+        public static string GetCellValue(string fileName, string sheetName, string addressName)
+        {
+            string value = null;
+
+            // Open the spreadsheet document for read-only access.
+            using (SpreadsheetDocument document = SpreadsheetDocument.Open(fileName, false))
+            {
+                // Retrieve a reference to the workbook part.
+                WorkbookPart wbPart = document.WorkbookPart;
+
+                // Find the sheet with the supplied name, and then use that 
+                // Sheet object to retrieve a reference to the first worksheet.
+                Sheet theSheet = wbPart.Workbook.Descendants<Sheet>().
+                  Where(s => s.Name == sheetName).FirstOrDefault();
+
+                // Throw an exception if there is no sheet.
+                if (theSheet == null)
+                {
+                    throw new ArgumentException("sheetName");
+                }
+
+                // Retrieve a reference to the worksheet part.
+                WorksheetPart wsPart = (WorksheetPart)(wbPart.GetPartById(theSheet.Id));
+
+                // Use its Worksheet property to get a reference to the cell 
+                // whose address matches the address you supplied.
+                Cell theCell = wsPart.Worksheet.Descendants<Cell>().Where(c => c.CellReference == addressName).FirstOrDefault();
+
+                // If the cell does not exist, return an empty string.
+                if (theCell != null)
+                {
+                    value = theCell.InnerText;
+
+                    // If the cell represents an integer number, you are done. 
+                    // For dates, this code returns the serialized value that represents the date. 
+                    // The code handles strings and booleans individually. 
+                    // For shared strings, the code looks up the corresponding value in the shared string table. 
+                    // For Booleans, the code converts the value into the words TRUE or FALSE.
+                    if (theCell.DataType != null)
                     {
-                        shareStringPart = spreadSheet.WorkbookPart.GetPartsOfType<SharedStringTablePart>().First();
+                        switch (theCell.DataType.Value)
+                        {
+                            case CellValues.SharedString:
+
+                                // For shared strings, look up the value in the shared strings table.
+                                var stringTable = wbPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
+
+                                // If the shared string table is missing, something is wrong. Return the index that is inthe cell.
+                                // Otherwise, look up the correct text in the table.
+                                if (stringTable != null)
+                                {
+                                    value = stringTable.SharedStringTable.ElementAt(int.Parse(value)).InnerText;
+                                }
+                                break;
+
+                            case CellValues.Boolean:
+                                switch (value)
+                                {
+                                    case "0":
+                                        value = "FALSE";
+                                        break;
+                                    default:
+                                        value = "TRUE";
+                                        break;
+                                }
+                                break;
+                        }
                     }
-                    else
-                    {
-                        shareStringPart = spreadSheet.WorkbookPart.AddNewPart<SharedStringTablePart>();
-                    }
-
-                    // Insert the text into the SharedStringTablePart.
-                    int index = InsertSharedStringItem(text, shareStringPart);
-
-                    // Get worksheet
-                    IEnumerable<Sheet> sheets = spreadSheet.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>().Where(s => s.Name == sheetName);
-                    if (sheets.Count() == 0)
-                    {
-                        // The specified worksheet does not exist.
-                        MessageBox.Show("Kan het Excel blad niet vinden.");
-                        return;
-                    }
-                    string relationshipId = sheets.First().Id.Value;
-                    WorksheetPart worksheetPart = (WorksheetPart)spreadSheet.WorkbookPart.GetPartById(relationshipId);
-
-                    // Insert the cell into the worksheet.
-                    Cell cell = InsertCellInWorksheet(colName, rowIndex, worksheetPart);
-
-                    // Set the value of the cell.
-                    cell.CellValue = new CellValue(index.ToString());
-                    cell.DataType = new EnumValue<CellValues>(CellValues.SharedString);
-
-                    // Save the new worksheet.
-                    worksheetPart.Worksheet.Save();
-
-                    MessageBox.Show("Bestand is opgeslagen.");
                 }
             }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message, "Oops!");
-            }
+            return value;
         }
 
         // Given text and a SharedStringTablePart, creates a SharedStringItem with the specified text 
