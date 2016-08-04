@@ -1,18 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.IO;
 using System.Windows;
+using System.Net.Mail;
+using System.Net.Mime;
+using Newtonsoft.Json;
 
 namespace Blycolin_Print_and_Mail
 {
     class Model
     {
+        public static void SendMail(string attachment)
+        {
+            string username;
+            string password;
+
+            // Read the credentials from a json file.
+            //
+            // Json file syntax:
+            //
+            // {
+            //     "username": "name",
+	        //     "password": "pass"
+            // }
+            //
+            using (StreamReader r = new StreamReader("Credentials.json"))
+            {
+                string json = r.ReadToEnd();
+                dynamic array = JsonConvert.DeserializeObject(json);
+                username = array["username"];
+                password = array["password"];
+            }
+
+            MailMessage mail = new MailMessage("koornbeheer@texel.com", "WesselKoorn@iCloud.com"); // customerservice.nl@blycolin.com
+            SmtpClient client = new SmtpClient();
+            client.EnableSsl = true;
+            client.Port = 25;
+            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+            client.UseDefaultCredentials = false;
+            client.Credentials = new System.Net.NetworkCredential(username, password);
+            client.Host = "smtp.texel.com";
+            mail.Subject = "Blycolin opgave Afkeur/Overwas";
+            // Create  the file attachment for this e-mail message.
+            Attachment data = new Attachment(attachment, MediaTypeNames.Application.Octet);
+            // Add the file attachment to this e-mail message.
+            mail.Attachments.Add(data);
+            client.Send(mail);
+        }
+
         // Insert text to a cell, given a document name, sheet name, column name and row number.
         public static void InsertText(string docName, string sheetName, string colName, uint rowIndex, string text)
         {

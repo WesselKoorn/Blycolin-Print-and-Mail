@@ -85,6 +85,8 @@ namespace Blycolin_Print_and_Mail
                 }
 
                 MessageBox.Show("Bestand is opgeslagen.");
+
+                Model.SendMail(docName);
             }
             catch (Exception exc)
             {
