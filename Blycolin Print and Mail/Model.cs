@@ -18,33 +18,46 @@ namespace Blycolin_Print_and_Mail
         {
             string username;
             string password;
+            string mailFrom;
+            string mailTo;
+            string host;
+            string subject;
 
             // Read the credentials from a json file.
             //
             // Json file syntax:
             //
             // {
-            //     "username": "name",
-	        //     "password": "pass"
+            //   "username": "name",
+            //   "password": "pass",
+            //   "mailFrom": "mail@from.com",
+            //   "mailTo"mail@to.com",
+            //   "host": "smtp.host.com",
+            //   "subject": "Subject"
             // }
             //
             using (StreamReader r = new StreamReader("Credentials.json"))
             {
                 string json = r.ReadToEnd();
                 dynamic array = JsonConvert.DeserializeObject(json);
+
                 username = array["username"];
                 password = array["password"];
+                mailFrom = array["mailFrom"];
+                mailTo = array["mailTo"];
+                host = array["host"];
+                subject = array["subject"];
             }
 
-            MailMessage mail = new MailMessage("koornbeheer@texel.com", "WesselKoorn@iCloud.com"); // customerservice.nl@blycolin.com
+            MailMessage mail = new MailMessage(mailFrom, mailTo);
             SmtpClient client = new SmtpClient();
             client.EnableSsl = true;
             client.Port = 25;
             client.DeliveryMethod = SmtpDeliveryMethod.Network;
             client.UseDefaultCredentials = false;
             client.Credentials = new System.Net.NetworkCredential(username, password);
-            client.Host = "smtp.texel.com";
-            mail.Subject = "Blycolin opgave Afkeur/Overwas";
+            client.Host = host;
+            mail.Subject = subject;
             // Create  the file attachment for this e-mail message.
             Attachment data = new Attachment(attachment, MediaTypeNames.Application.Octet);
             // Add the file attachment to this e-mail message.
