@@ -53,8 +53,6 @@ namespace Blycolin_Print_and_Mail
 
                 // Save the new worksheet.
                 worksheetPart.Worksheet.Save();
-
-                MessageBox.Show("Bestand is opgeslagen.");
             }
         }
 
@@ -72,8 +70,7 @@ namespace Blycolin_Print_and_Mail
 
                 // Find the sheet with the supplied name, and then use that 
                 // Sheet object to retrieve a reference to the first worksheet.
-                Sheet theSheet = wbPart.Workbook.Descendants<Sheet>().
-                  Where(s => s.Name == sheetName).FirstOrDefault();
+                Sheet theSheet = wbPart.Workbook.Descendants<Sheet>().Where(s => s.Name == sheetName).FirstOrDefault();
 
                 // Throw an exception if there is no sheet.
                 if (theSheet == null)

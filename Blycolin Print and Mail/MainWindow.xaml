@@ -10,8 +10,6 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="0*"/>
-            <!--<RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>-->
         </Grid.RowDefinitions>
         <Button x:Name="submitButton" Content="Verstuur" HorizontalAlignment="Right" Margin="30" VerticalAlignment="Top" Width="117" Height="75" Click="submitButton_Click"/>
 

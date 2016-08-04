@@ -1,20 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.IO.Packaging;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
 
 namespace Blycolin_Print_and_Mail
 {
@@ -26,7 +13,7 @@ namespace Blycolin_Print_and_Mail
         private const string docName = @"testSheet.xlsx";
         private const string sheetName = "Blad1";
         private List<Article> articles = new List<Article>();
-        private List<string> articleDescriptions = new List<string>();
+        private List<Tuple<string, int>> articleDescriptions = new List<Tuple<string, int>>();
 
         private Dictionary<string, string> columnNames = new Dictionary<string, string>
         {
@@ -36,6 +23,16 @@ namespace Blycolin_Print_and_Mail
             { "linen", "Vreemd linnen" },
             { "returns", "Aantal retouren" },
             { "comments", "Opmerking" }
+        };
+
+        private Dictionary<string, string> columns = new Dictionary<string, string>
+        {
+            { "B", "description" },
+            { "D", "reject" },
+            { "E", "rewash" },
+            { "F", "linen" },
+            { "G", "returns" },
+            { "H", "comments" }
         };
 
         public MainWindow()
@@ -50,7 +47,7 @@ namespace Blycolin_Print_and_Mail
                 {
                     string addressName = "B" + i;
 
-                    articleDescriptions.Add(Model.GetCellValue(docName, sheetName, addressName));
+                    articleDescriptions.Add(new Tuple<string, int>(Model.GetCellValue(docName, sheetName, addressName), i));
                 }
             }
             catch (Exception e)
@@ -58,9 +55,9 @@ namespace Blycolin_Print_and_Mail
                 MessageBox.Show(e.Message, "Oops!");
             }
 
-            foreach (string description in articleDescriptions)
+            foreach (Tuple<string, int> description in articleDescriptions)
             {
-                articles.Add(new Article(description));
+                articles.Add(new Article(description.Item1, description.Item2));
             }
 
             dataGrid.ItemsSource = articles;
@@ -70,7 +67,24 @@ namespace Blycolin_Print_and_Mail
         {
             try
             {
-                Model.InsertText(docName, sheetName, "B", 6, "Tekst vanuit programma");
+                // Update from the static textboxes
+                Model.InsertText(docName, sheetName, "B", 6, datumTextBox.Text);
+                Model.InsertText(docName, sheetName, "H", 6, containersTextBox.Text);
+                Model.InsertText(docName, sheetName, "H", 8, zakkenTextBox.Text);
+
+                // Update from the DataGrid
+                foreach (var article in articles)
+                {
+                    foreach (var column in columns)
+                    {
+                        string columnName = column.Key;
+                        uint row = Convert.ToUInt32(article.GetRow());
+                        string value = article.GetProperty(column.Value);
+                        Model.InsertText(docName, sheetName, columnName, row, value);
+                    }
+                }
+
+                MessageBox.Show("Bestand is opgeslagen.");
             }
             catch (Exception exc)
             {
@@ -101,9 +115,10 @@ namespace Blycolin_Print_and_Mail
 
     public class Article
     {
-        public Article(string description)
+        public Article(string description, int row)
         {
             this.description = description;
+            _row = row;
         }
         
         public string description { get; }
@@ -112,5 +127,33 @@ namespace Blycolin_Print_and_Mail
         public int linen { get; set; }
         public int returns { get; set; }
         public string comments { get; set; }
+
+        private int _row;
+
+        public int GetRow()
+        {
+            return _row;
+        }
+
+        public string GetProperty(string name)
+        {
+            switch (name)
+            {
+                case "description":
+                    return description;
+                case "reject":
+                    return reject.ToString();
+                case "rewash":
+                    return rewash.ToString();
+                case "linen":
+                    return linen.ToString();
+                case "returns":
+                    return returns.ToString();
+                case "comments":
+                    return comments;
+                default:
+                    return null;
+            }
+        }
     }
 }
