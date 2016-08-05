@@ -64,6 +64,7 @@ namespace Blycolin_Print_and_Mail
             // Add the file attachment to this e-mail message.
             mail.Attachments.Add(data);
             client.Send(mail);
+            data.Dispose();
         }
 
         public static void Print(string fileName)

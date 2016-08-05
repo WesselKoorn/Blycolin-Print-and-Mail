@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Blycolin_Print_and_Mail"
         mc:Ignorable="d"
-        Title="MainWindow" Height="652" Width="978">
+        Title="Blycolin Print and Mail" Height="652" Width="978">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
