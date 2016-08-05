@@ -9,6 +9,7 @@ using System.Windows;
 using System.Net.Mail;
 using System.Net.Mime;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace Blycolin_Print_and_Mail
 {
@@ -36,7 +37,7 @@ namespace Blycolin_Print_and_Mail
             //   "subject": "Subject"
             // }
             //
-            using (StreamReader r = new StreamReader("Credentials.json"))
+            using (StreamReader r = new StreamReader("MailSettings.json"))
             {
                 string json = r.ReadToEnd();
                 dynamic array = JsonConvert.DeserializeObject(json);
@@ -63,6 +64,16 @@ namespace Blycolin_Print_and_Mail
             // Add the file attachment to this e-mail message.
             mail.Attachments.Add(data);
             client.Send(mail);
+        }
+
+        public static void Print(string fileName)
+        {
+            //Using below code we can print any document
+            ProcessStartInfo info = new ProcessStartInfo(fileName);
+            info.Verb = "Print";
+            info.CreateNoWindow = true;
+            info.WindowStyle = ProcessWindowStyle.Hidden;
+            Process.Start(info);
         }
 
         // Insert text to a cell, given a document name, sheet name, column name and row number.
