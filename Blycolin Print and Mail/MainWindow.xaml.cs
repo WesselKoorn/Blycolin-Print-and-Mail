@@ -10,7 +10,7 @@ namespace Blycolin_Print_and_Mail
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string docName = @"testSheet.xlsx";
+        private const string docName = @"Blycolin.xlsx";
         private const string sheetName = "Blad1";
         private List<Article> articles = new List<Article>();
         private List<Tuple<string, int>> articleDescriptions = new List<Tuple<string, int>>();
